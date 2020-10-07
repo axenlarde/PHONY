@@ -1,0 +1,19 @@
+﻿<!--
+PHONY configuration file
+-->
+
+<xml>
+	<config>
+		<!--Misc-->
+		<log4j>DEBUG</log4j><!--Logging level : ERROR,INFO,DEBUG-->
+		<language>english</language><!--french,english-->
+		<outputcsvsplitter>;</outputcsvsplitter>
+		<inputcsvsplitter>,</inputcsvsplitter>
+		<!--Cli parameters-->
+		<maxclithread>10</maxclithread>
+		<cliconnectiontimeout>10000</cliconnectiontimeout>
+		<!--CUCM parameters--><!--At the moment the password has to be the same for all the targeted CUCM-->
+		<login>OSAdmin</login>
+		<password>P@ssw0rd</password><!--To keep secret-->
+	</config>
+</xml>
