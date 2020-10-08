@@ -1,5 +1,6 @@
 package com.alex.phony.action;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import com.alex.phony.cli.CliInjector;
@@ -8,6 +9,8 @@ import com.alex.phony.cli.OneLine.cliType;
 import com.alex.phony.misc.CUCM;
 import com.alex.phony.misc.MiscTools;
 import com.alex.phony.misc.Phone;
+import com.alex.phony.misc.Phone.PhoneStatus;
+import com.alex.phony.utils.UsefulMethod;
 import com.alex.phony.utils.Variables;
 
 /**
@@ -70,25 +73,68 @@ public class Action extends Thread
 				}
 			
 			//Parsing phone data
+			String splitter = UsefulMethod.getTargetOption("inputcsvsplitter");
+			
 			for(CUCM cucm : Variables.getCucmList())
 				{
 				Variables.getLogger().debug(cucm.getInfo()+" : Parsing phone list");
-				Variables.getPhoneList().addAll(MiscTools.parsePhoneList(cucm, cucm.getFullConversation()));
+				Variables.getPhoneList().addAll(MiscTools.parsePhoneList(cucm.getIp(), cucm.getFullConversation(), splitter));
 				Variables.getLogger().debug(cucm.getInfo()+" : Phone list parsed, new Phone list size : "+Variables.getPhoneList().size());
 				}
 			
-			//Temp
-			for(Phone p : Variables.getPhoneList())
-				{
-				Variables.getLogger().debug("-"+p.getInfo());
-				}
-			
-			//temp
+			//We keep only registered phones
+			MiscTools.filterRegisteredPhone(Variables.getPhoneList());
+			Variables.getLogger().debug("Phone list filtered with registered phone, new Phone list size : "+Variables.getPhoneList().size());
 			
 			/**
 			 * 3 : Write down the file
+			 * 
+			 * Here we will also check if a previous version of the file exists
+			 * If yes, we will read it and compare the new value to it
+			 * If not, we will just write a new file
 			 */
-			MiscTools.writePhoneListToCSV(Variables.getPhoneList());
+			try
+				{
+				//Checking for existing file
+				File f = new File(Variables.getMainDirectory()+"/"+Variables.getOutputFileName());
+				if(f.exists())
+					{
+					Variables.getLogger().debug("Output file found so we update the existing one");
+					ArrayList<String> phoneList = MiscTools.readPhoneFile(f);
+					splitter = UsefulMethod.getTargetOption("outputcsvsplitter");
+					ArrayList<Phone> existingPhoneList = MiscTools.parsePhoneList(null, phoneList, splitter);
+					
+					//Comparison
+					for(Phone ep : existingPhoneList)
+						{
+						for(Phone cp : Variables.getPhoneList())
+							{
+							if(ep.getDeviceName().equals(cp.getDeviceName()))
+								{
+								ep.setNewPhoneStatus(PhoneStatus.Registered);
+								break;
+								}
+							}
+						}
+					
+					//Finally we write down the new file with the updated status
+					MiscTools.writePhoneListToCSV(existingPhoneList, true);
+					}
+				else
+					{
+					Variables.getLogger().debug("Output file not found so we write a new one");
+					MiscTools.writePhoneListToCSV(Variables.getPhoneList(), false);
+					}
+				}
+			catch (Exception e)
+				{
+				Variables.getLogger().error("ERROR while comparing files : "+e.getMessage(),e);
+				/**
+				 * In case of error during the comparison process we write down a new file
+				 * So at least we get the current scan result
+				 */
+				MiscTools.writePhoneListToCSV(Variables.getPhoneList(), false);
+				}
 			
 			Variables.getLogger().debug(Variables.getSoftwareName()+" : Ends");
 			}

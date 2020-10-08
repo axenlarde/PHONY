@@ -4,23 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
-import java.net.NetworkInterface;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.apache.log4j.Level;
-import org.w3c.dom.ranges.Range;
 
-import com.alex.phony.cli.OneLine;
 import com.alex.phony.misc.CUCM;
 
 

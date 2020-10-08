@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import com.alex.phony.misc.CUCM;
+import com.alex.phony.utils.UsefulMethod;
 import com.alex.phony.utils.Variables;
 
 /**
@@ -39,13 +40,15 @@ public class AnswerReceiver extends Thread
 		
 		try
 			{
+			boolean logExchange = Boolean.parseBoolean(UsefulMethod.getTargetOption("logcliexchange"));
+			
 			while (((row = in.readLine()) != null)&&(!stop))
 		    	{
 		    	//Store one element of conversation
 		    	if(exchange.size()>maxBuffer)exchange.clear();
 		    	exchange.add(row);
 		    	cucm.getFullConversation().add(row);
-		    	Variables.getLogger().debug(cucm.getInfo()+" : #CLI# "+row);
+		    	if(logExchange)Variables.getLogger().debug(cucm.getInfo()+" : #CLI# "+row);
 		    	}
 			/******
 			 * Deletion of the conversation to

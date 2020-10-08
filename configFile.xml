@@ -12,6 +12,7 @@ PHONY configuration file
 		<!--Cli parameters-->
 		<maxclithread>10</maxclithread>
 		<cliconnectiontimeout>10000</cliconnectiontimeout>
+		<logcliexchange>false</logcliexchange>
 		<!--CUCM parameters--><!--At the moment the password has to be the same for all the targeted CUCM-->
 		<login>OSAdmin</login>
 		<password>P@ssw0rd</password><!--To keep secret-->

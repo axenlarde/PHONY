@@ -1,8 +1,11 @@
 package com.alex.phony.misc;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,7 +27,7 @@ public class MiscTools
 	 * Write the overall result to a csv file
 	 */
 	
-	public static void writePhoneListToCSV(ArrayList<Phone> phoneList)
+	public static void writePhoneListToCSV(ArrayList<Phone> phoneList, boolean update)
 		{
 		try
 			{
@@ -33,26 +36,29 @@ public class MiscTools
 			String cr = "\r\n";
 			BufferedWriter csvBuffer = new BufferedWriter(new FileWriter(new File(Variables.getMainDirectory()+"/"+Variables.getOutputFileName()), false));
 			
+			
 			//FirstLine
-			csvBuffer.write("CUCM"+splitter+"DeviceName"+splitter+"Descr"+splitter+"Ipaddr"+splitter+"MACaddr"+splitter+"RegStatus"+splitter+"PhoneProtocol"+splitter+"DeviceModel"+splitter+"username"+splitter+"LoadId"+splitter+"ActiveLoadId"+splitter+"InactiveLoadId"+cr);
+			String firstLine = "CUCM"+splitter+"DeviceName"+splitter+"Descr"+splitter+"Ipaddr"+splitter+"MACaddr"+splitter+"RegStatus"+splitter+"PhoneProtocol"+splitter+"DeviceModel"+splitter+"username"+splitter+"LoadId"+splitter+"ActiveLoadId"+splitter+"InactiveLoadId";
+			firstLine += (update)?splitter+"NewStatus"+cr:cr;
+			csvBuffer.write(firstLine);
 			
 			for(Phone p : phoneList)
 				{
-				if(p.getPhoneStatus().equals(PhoneStatus.Registered))
-					{
-					csvBuffer.write(p.getCucm().getIp()+splitter+
-							p.getDeviceName()+splitter+
-							p.getDescr()+splitter+
-							p.getIpaddr()+splitter+
-							p.getMACaddr()+splitter+
-							p.getPhoneStatus().name()+splitter+
-							p.getPhoneProtocol()+splitter+
-							p.getDeviceModel()+splitter+
-							p.getUsername()+splitter+
-							p.getLoadId()+splitter+
-							p.getActiveLoadId()+splitter+
-							p.getInactiveLoadId()+splitter+cr);
-					}
+				String content = p.getCucmIP()+splitter+
+						p.getDeviceName()+splitter+
+						p.getDescr()+splitter+
+						p.getIpaddr()+splitter+
+						p.getMACaddr()+splitter+
+						p.getPhoneStatus().name()+splitter+
+						p.getPhoneProtocol()+splitter+
+						p.getDeviceModel()+splitter+
+						p.getUsername()+splitter+
+						p.getLoadId()+splitter+
+						p.getActiveLoadId()+splitter+
+						p.getInactiveLoadId();
+				
+				content += (update)?splitter+p.getNewPhoneStatus()+cr:cr;
+				csvBuffer.write(content);
 				}
 			
 			csvBuffer.flush();
@@ -111,20 +117,19 @@ public class MiscTools
 	 * @return
 	 * @throws Exception 
 	 */
-	public static ArrayList<Phone> parsePhoneList(CUCM cucm, ArrayList<String> stringList) throws Exception
+	public static ArrayList<Phone> parsePhoneList(String cucmIP, ArrayList<String> stringList, String splitter) throws Exception
 		{
 		ArrayList<Phone> phoneList = new ArrayList<Phone>();
 		String header = stringList.get(0);
-		String splitter = UsefulMethod.getTargetOption("inputcsvsplitter");
-		String[] hTab = header.split(splitter);
+		String[] hTab = header.split(splitter, -1);
 		
 		for(int i=1;i<stringList.size(); i++)
 			{
 			try
 				{
-				String[] pTab = stringList.get(i).split(splitter);
+				String[] pTab = stringList.get(i).split(splitter, -1);
 				
-				phoneList.add(new Phone(cucm,
+				phoneList.add(new Phone((cucmIP == null)?pTab[getDataIndexFromHeader(hTab, "CUCM")].trim():cucmIP,
 						pTab[getDataIndexFromHeader(hTab, "deviceName")].trim(),
 						pTab[getDataIndexFromHeader(hTab, "descr")].trim(),
 						pTab[getDataIndexFromHeader(hTab, "ipaddr")].trim(),
@@ -184,7 +189,72 @@ public class MiscTools
 			{
 			if(t[0].equals(PMID))return t[1];
 			}
-		return "Model not found";
+		return PMID;
+		}
+	
+	/**
+	 * read the given file and convert it to an arraylist of string
+	 * @param f
+	 * @return
+	 * @throws Exception
+	 */
+	public static ArrayList<String> readPhoneFile(File f) throws Exception
+		{
+		ArrayList<String> phoneList = new ArrayList<String>();
+		FileInputStream fis = new FileInputStream(f);
+		BufferedReader buffer = new BufferedReader(new InputStreamReader(fis,"UTF-8"));
+		
+		String line;
+		
+		while((line = buffer.readLine()) != null)
+			{
+			phoneList.add(line);
+			}
+		
+		buffer.close();
+		fis.close();
+		
+		return phoneList;
+		}
+	
+	/**
+	 * Conventional method to filter registered phones
+	 * @param list
+	 * @return
+	 */
+	public static ArrayList<Phone> keepOnlyRegisteredPhones(ArrayList<Phone> list)
+		{
+		ArrayList<Phone> filteredList = new ArrayList<Phone>();
+		
+		for(Phone p : list)
+			{
+			if((p.getPhoneStatus().equals(PhoneStatus.Registered)) || (p.getPhoneStatus().equals(PhoneStatus.ParRegistered)))
+				{
+				filteredList.add(p);
+				}
+			}
+		return filteredList;
+		}
+	
+	/**
+	 * Recursive method to filter only registered phones
+	 * @param list
+	 */
+	public static void filterRegisteredPhone(ArrayList<Phone> list)
+		{
+		for(Phone p : list)
+			{
+			if((p.getPhoneStatus().equals(PhoneStatus.Registered)) || (p.getPhoneStatus().equals(PhoneStatus.ParRegistered)))
+				{
+				//Nothing
+				}
+			else
+				{
+				list.remove(p);
+				filterRegisteredPhone(list);
+				break;
+				}
+			}
 		}
 	
 	
